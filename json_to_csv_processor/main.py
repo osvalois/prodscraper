@@ -189,7 +189,7 @@ class ProductProcessor:
 
 async def main():
     """Main function to run the product attribute extraction process."""
-    json_url = os.getenv('JSON_URL', 'https://storage.googleapis.com/resources-prod-shelftia/scrapers-prueba/product.json')
+    json_url = os.getenv('JSON_URL', '')
     output_file = Path(os.getenv('OUTPUT_FILE', 'output-product.csv'))
 
     processor = ProductProcessor(json_url, output_file)
