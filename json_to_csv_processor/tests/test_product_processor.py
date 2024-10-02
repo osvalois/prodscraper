@@ -35,7 +35,7 @@ async def test_product_processor(sample_json_data):
     with patch.object(JSONFetcher, 'fetch', return_value=sample_json_data), \
          patch.object(CSVWriter, 'write') as mock_write:
         
-        processor = ProductProcessor("http://example.com", Path("output.csv"))
+        processor = ProductProcessor("http://api.example.com", Path("output.csv"))
         await processor.process()
 
         expected_attributes = ProductAttributes(
@@ -53,5 +53,3 @@ async def test_product_processor(sample_json_data):
         )
 
         mock_write.assert_called_once_with(expected_attributes, Path("output.csv"))
-
-# Add more tests for individual components (JSONFetcher, ProductAttributeExtractor, CSVWriter)
