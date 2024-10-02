@@ -1,0 +1,27 @@
+# Dependencias principales
+aiohttp==3.8.5
+requests==2.31.0
+
+# Herramientas de desarrollo y calidad de código
+black==23.7.0
+isort==5.12.0
+mypy==1.5.1
+flake8==6.1.0
+pylint==2.17.5
+
+# Herramientas de testing
+pytest==7.4.0
+pytest-asyncio==0.21.1
+pytest-cov==4.1.0
+
+# Herramientas de documentación
+Sphinx==7.1.2
+
+# Herramientas de tipado
+types-requests==2.31.0.2
+
+# Herramientas de seguridad
+bandit==1.7.5
+
+# Herramientas de manejo de entorno
+python-dotenv==1.0.0
