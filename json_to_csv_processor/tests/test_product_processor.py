@@ -3,7 +3,7 @@ from pathlib import Path
 from unittest.mock import patch, MagicMock
 from decimal import Decimal
 
-from main import ProductProcessor, ProductAttributes, JSONFetcher, ProductAttributeExtractor, CSVWriter
+from product_scraper import ProductProcessor, ProductAttributes, JSONFetcher, ProductAttributeExtractor, CSVWriter
 
 @pytest.fixture
 def sample_json_data():
