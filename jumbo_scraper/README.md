@@ -7,7 +7,7 @@
 
 ## 🚀 Overview
 
-ProdScraper is a cutting-edge, high-performance API designed for efficient and scalable scraping of product information from e-commerce websites. Built on the robust FastAPI framework and leveraging Redis for intelligent caching, ProdScraper offers unparalleled speed and reliability in data extraction while adhering to ethical scraping practices.
+ProdScraper is a API designed for efficient and scalable scraping. Built on the robust FastAPI framework and leveraging Redis for intelligent caching, ProdScraper offers unparalleled speed and reliability in data extraction while adhering to ethical scraping practices.
 
 ## ✨ Key Features
 

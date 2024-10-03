@@ -1,95 +1,106 @@
-name: CI
+name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main ]
   pull_request:
-    branches: [ main, develop ]
+    branches: [ main ]
 
 jobs:
-  test:
+  test_json_to_csv:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: [3.8, 3.9, '3.10', '3.11']
-
+    defaults:
+      run:
+        working-directory: ./json_to_csv_processor
     steps:
     - uses: actions/checkout@v2
-
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
-      with:
-        python-version: ${{ matrix.python-version }}
-
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install -r requirements-dev.txt
-
-    - name: Run black
-      run: black --check .
-
-    - name: Run isort
-      run: isort --check-only --diff .
-
-    - name: Run flake8
-      run: flake8 .
-
-    - name: Run mypy
-      run: mypy .
-
-    - name: Run pytest with coverage
-      run: pytest --cov=./ --cov-report=xml
-
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v3
-      with:
-        file: ./coverage.xml
-        flags: unittests
-        env_vars: OS,PYTHON
-        name: codecov-umbrella
-        fail_ci_if_error: true
-
-  security:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
         python-version: '3.11'
-
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install bandit
-
-    - name: Run Bandit
-      run: bandit -r . -f custom
-
-  build:
-    needs: [test, security]
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-
-    - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.11'
-
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
+    - name: Run tests
+      run: pytest
 
-    - name: Build package
-      run: python setup.py sdist bdist_wheel
+  test_jumbo_scraper:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./jumbo_scraper
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.11'
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    - name: Run tests
+      run: pytest
 
-    - name: Archive production artifacts
+  build_and_push_jumbo_scraper:
+    needs: [test_json_to_csv, test_jumbo_scraper]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./jumbo_scraper
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v1
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v1
+    - name: Login to DockerHub
+      uses: docker/login-action@v1
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+    - name: Build and push
+      uses: docker/build-push-action@v2
+      with:
+        context: ./jumbo_scraper
+        push: true
+        tags: osvalois/jumbo-scraper:latest,osvalois/jumbo-scraper:${{ github.sha }}
+
+  deploy_jumbo_scraper:
+    needs: build_and_push_jumbo_scraper
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./jumbo_scraper
+    steps:
+    - uses: actions/checkout@v2
+    - uses: superfly/flyctl-actions/setup-flyctl@master
+    - name: Deploy to fly.io
+      run: flyctl deploy --remote-only
+      env:
+        FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+
+  process_json_to_csv:
+    needs: [test_json_to_csv, test_jumbo_scraper]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./json_to_csv_processor
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.11'
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    - name: Run JSON to CSV processor
+      run: python main.py
+    - name: Upload CSV artifact
       uses: actions/upload-artifact@v2
       with:
-        name: dist
-        path: dist
+        name: output-product
+        path: ./json_to_csv_processor/output-product.csv
