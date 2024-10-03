@@ -22,9 +22,9 @@ import logging
 from dataclasses import dataclass, asdict, field
 from functools import lru_cache
 
-import aiohttp
-from aiohttp import ClientSession
-from dotenv import load_dotenv
+import aiohttp # type: ignore
+from aiohttp import ClientSession # type: ignore
+from dotenv import load_dotenv # type: ignore
 import os
 
 # Load environment variables

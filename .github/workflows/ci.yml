@@ -7,7 +7,26 @@ on:
     branches: [ main ]
 
 jobs:
+  test_json_to_csv:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./json_to_csv_processor
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.11'
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    - name: Run tests
+      run: pytest
+
   build_and_push_jumbo_scraper:
+    needs: test_json_to_csv
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -45,6 +64,7 @@ jobs:
         FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
 
   process_json_to_csv:
+    needs: test_json_to_csv
     runs-on: ubuntu-latest
     defaults:
       run:
