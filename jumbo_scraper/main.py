@@ -1,6 +1,5 @@
 from fastapi import FastAPI, HTTPException, Depends, Security, Request
 from fastapi.security.api_key import APIKeyHeader, APIKey
-from motor.motor_asyncio import AsyncIOMotorClient
 import asyncio
 from prometheus_client import start_http_server
 from prometheus_metrics import REGISTRY
@@ -22,10 +21,6 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc",
 )
-
-# MongoDB Atlas client
-mongo_client = None
-db = None
 
 # Redis client
 redis_client = None
@@ -56,15 +51,7 @@ app.add_middleware(PrometheusMiddleware)
 
 @app.on_event("startup")
 async def startup_event():
-    global mongo_client, db, redis_client
-    mongo_client = AsyncIOMotorClient(
-        settings.MONGODB_URL,
-        maxPoolSize=settings.MONGODB_MAX_POOL_SIZE,
-        minPoolSize=settings.MONGODB_MIN_POOL_SIZE,
-        maxIdleTimeMS=settings.MONGODB_MAX_IDLE_TIME_MS
-    )
-    db = mongo_client[settings.mongodb_database]
-    
+    global redis_client
     redis_client = aioredis.from_url(
         settings.redis_url,
         encoding="utf-8",
@@ -74,12 +61,10 @@ async def startup_event():
         retry_on_timeout=settings.REDIS_RETRY_ON_TIMEOUT
     )
     
-    start_http_server(8000)
+    start_http_server(8080)
 
 @app.on_event("shutdown")
 async def shutdown_event():
-    if mongo_client:
-        await mongo_client.close()
     if redis_client:
         await redis_client.close()
 
@@ -108,13 +93,6 @@ async def scrape(request: ScrapeRequest, api_key: APIKey = Depends(get_api_key))
         
         if 'error' not in result:
             REGISTRY['successful_scrapes_total'].inc()
-            
-            # Store the result in MongoDB
-            await db.results.insert_one({
-                "url": result["url"],
-                "products": result["products"],
-                "timestamp": time.time()
-            })
             
             # Cache the result
             await set_cached_result(url, result)
@@ -150,13 +128,6 @@ async def scrape_multiple(request: MultiScrapeRequest, api_key: APIKey = Depends
                 if 'error' not in result:
                     REGISTRY['successful_scrapes_total'].inc()
                     
-                    # Store each result in MongoDB
-                    await db.results.insert_one({
-                        "url": result["url"],
-                        "products": result["products"],
-                        "timestamp": time.time()
-                    })
-                    
                     # Cache the result
                     await set_cached_result(result["url"], result)
                 else:
@@ -170,9 +141,8 @@ async def scrape_multiple(request: MultiScrapeRequest, api_key: APIKey = Depends
 @app.get("/health", tags=["health"])
 async def health_check():
     try:
-        await db.command('ping')
         await redis_client.ping()
-        return {"status": "healthy", "mongodb": "connected", "redis": "connected"}
+        return {"status": "healthy", "redis": "connected"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Health check failed: {str(e)}")
 
@@ -183,4 +153,4 @@ async def metrics():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8080)
