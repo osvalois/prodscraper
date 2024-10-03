@@ -7,3 +7,4 @@ playwright==1.34.0
 beautifulsoup4==4.12.2
 prometheus_client==0.16.0
 python-dotenv==1.0.0
+aioredis==2.0.1

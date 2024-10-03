@@ -1,4 +1,4 @@
-from pydantic import BaseModel, HttpUrl
+from pydantic import BaseModel, HttpUrl, validator
 from typing import List
 
 class ScrapeRequest(BaseModel):
@@ -18,3 +18,15 @@ class ScrapeResponse(BaseModel):
 
 class MultiScrapeResponse(BaseModel):
     results: List[ScrapeResponse]
+
+
+class Product(BaseModel):
+    name: str
+    price: str
+    promo_price: str
+
+    @validator('name', 'price', 'promo_price')
+    def check_not_empty(cls, v):
+        if not v.strip():
+            raise ValueError("Field cannot be empty")
+        return v

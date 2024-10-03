@@ -6,28 +6,29 @@ load_dotenv()
 
 class Settings(BaseSettings):
     # Redis configuration
-    REDIS_HOST: str = Field(default="localhost")
-    REDIS_PORT: int = Field(default=6379)
-    REDIS_USERNAME: str = Field(default="")
-    REDIS_PASSWORD: str = Field(default="")
-    REDIS_DB: int = Field(default=0)
+    REDIS_HOST: str = Field(...)
+    REDIS_PORT: int = Field(...)
+    REDIS_USERNAME: str = Field(...)
+    REDIS_PASSWORD: str = Field(...)
     REDIS_MAX_CONNECTIONS: int = Field(default=10)
     REDIS_SOCKET_TIMEOUT: int = Field(default=5)
     REDIS_RETRY_ON_TIMEOUT: bool = Field(default=True)
+    REDIS_CACHE_EXPIRATION: int = Field(default=300)  # 5 minutes
 
     # MongoDB configuration
-    MONGODB_URL: str = Field(default="mongodb://localhost:27017/default_db")
+    MONGODB_URL: str = Field(...)
     MONGODB_MAX_POOL_SIZE: int = Field(default=100)
     MONGODB_MIN_POOL_SIZE: int = Field(default=0)
     MONGODB_MAX_IDLE_TIME_MS: int = Field(default=10000)
 
-    # JWT configuration
-    JWT_SECRET: str = Field(default="your-secret-key")
-    JWT_ALGORITHM: str = Field(default="HS256")
-
     # API Key configuration
     API_KEY: str = Field(...)
     API_KEY_NAME: str = Field(default="X-API-Key")
+
+    # Scraping settings
+    SCRAPE_TIMEOUT: int = Field(default=30000)
+    RATE_LIMIT_CALLS: int = Field(default=1)
+    RATE_LIMIT_PERIOD: float = Field(default=1.0)
 
     class Config:
         env_file = ".env"
@@ -40,9 +41,9 @@ class Settings(BaseSettings):
         port = parsed_url.port or self.REDIS_PORT
 
         if self.REDIS_USERNAME and self.REDIS_PASSWORD:
-            return f"redis://{self.REDIS_USERNAME}:{self.REDIS_PASSWORD}@{host}:{port}/{self.REDIS_DB}"
+            return f"redis://{self.REDIS_USERNAME}:{self.REDIS_PASSWORD}@{host}:{port}/0"
         else:
-            return f"redis://{host}:{port}/{self.REDIS_DB}"
+            return f"redis://{host}:{port}/0"
 
     @property
     def mongodb_database(self):
