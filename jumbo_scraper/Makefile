@@ -6,9 +6,15 @@ PIP := $(VENV)/bin/pip
 UVICORN := $(VENV)/bin/uvicorn
 CELERY := $(VENV)/bin/celery
 PLAYWRIGHT := $(VENV)/bin/playwright
+DOCKER := docker
+DOCKER_COMPOSE := docker-compose
+
+# Docker image and container names
+DOCKER_IMAGE_NAME := myapp
+DOCKER_CONTAINER_NAME := myapp-container
 
 # Phony targets
-.PHONY: all setup run clean show-architecture test
+.PHONY: all setup run clean show-architecture test docker-build docker-run docker-stop docker-clean
 
 all: setup
 
@@ -45,7 +51,34 @@ show-architecture:
 
 test: setup
 	@echo "Running tests..."
-	@$(VENV)/bin/pytest
+	@PYTHONPATH=. $(VENV)/bin/pytest tests/
+
+# Docker targets
+docker-build:
+	@echo "Building Docker image..."
+	$(DOCKER) build -t $(DOCKER_IMAGE_NAME) .
+
+docker-run: docker-build
+	@echo "Running Docker container..."
+	$(DOCKER) run -d --name $(DOCKER_CONTAINER_NAME) -p 8000:8000 $(DOCKER_IMAGE_NAME)
+
+docker-stop:
+	@echo "Stopping Docker container..."
+	$(DOCKER) stop $(DOCKER_CONTAINER_NAME)
+	$(DOCKER) rm $(DOCKER_CONTAINER_NAME)
+
+docker-clean: docker-stop
+	@echo "Removing Docker image..."
+	$(DOCKER) rmi $(DOCKER_IMAGE_NAME)
+
+# Docker Compose targets
+docker-compose-up:
+	@echo "Starting services with Docker Compose..."
+	$(DOCKER_COMPOSE) up -d
+
+docker-compose-down:
+	@echo "Stopping services with Docker Compose..."
+	$(DOCKER_COMPOSE) down
 
 # Help target
 help:
@@ -55,4 +88,10 @@ help:
 	@echo "  make clean              : Remove virtual environment and stop services"
 	@echo "  make show-architecture  : Display the project architecture"
 	@echo "  make test               : Run the test suite"
+	@echo "  make docker-build       : Build the Docker image"
+	@echo "  make docker-run         : Build and run the Docker container"
+	@echo "  make docker-stop        : Stop and remove the Docker container"
+	@echo "  make docker-clean       : Remove the Docker container and image"
+	@echo "  make docker-compose-up  : Start services with Docker Compose"
+	@echo "  make docker-compose-down: Stop services with Docker Compose"
 	@echo "  make help               : Show this help message"
