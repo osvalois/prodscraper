@@ -19,7 +19,6 @@ class ScrapeResponse(BaseModel):
 class MultiScrapeResponse(BaseModel):
     results: List[ScrapeResponse]
 
-
 class Product(BaseModel):
     name: str
     price: str

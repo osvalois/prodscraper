@@ -4,7 +4,7 @@ from bs4 import BeautifulSoup
 import logging
 from typing import Dict, Any
 import aiohttp
-from models import Product
+from ..models.product import Product
 import time
 from urllib.parse import urlparse
 
